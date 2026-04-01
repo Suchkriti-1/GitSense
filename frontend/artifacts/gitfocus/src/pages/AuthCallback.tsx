@@ -5,8 +5,14 @@ import { useAuth } from "@/App";
 
 export default function AuthCallback() {
   const [, navigate] = useLocation();
-  const { completeAuth } = useAuth();
+  const { completeAuth, isAuthenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,7 +44,6 @@ export default function AuthCallback() {
 
         if (!cancelled) {
           completeAuth(token, user);
-          navigate("/dashboard", { replace: true });
         }
       } catch (authError) {
         if (!cancelled) {
