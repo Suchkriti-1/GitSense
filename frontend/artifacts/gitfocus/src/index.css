@@ -1,0 +1,198 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-serif: 'Instrument Serif', serif;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --radius-xl: 1rem;
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+}
+
+:root {
+  /* Ultra-modern dark theme / Pure Black */
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  
+  --card: 0 0% 4%;
+  --card-foreground: 0 0% 100%;
+  
+  --popover: 0 0% 4%;
+  --popover-foreground: 0 0% 100%;
+  
+  --primary: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
+  
+  --secondary: 0 0% 9%;
+  --secondary-foreground: 0 0% 100%;
+  
+  --muted: 0 0% 9%;
+  --muted-foreground: 0 0% 60%;
+  
+  --accent: 0 0% 12%;
+  --accent-foreground: 0 0% 100%;
+  
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 0 0% 100%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-white selection:text-black overflow-x-hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-tight font-bold;
+  }
+}
+
+/* Custom Utilities for the minimal aesthetic */
+@layer utilities {
+  .glass-header {
+    @apply bg-black/80 backdrop-blur-md border-b border-white/5;
+  }
+  
+  .glow-hover {
+    @apply transition-all duration-300;
+  }
+  
+  .glow-hover:hover {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  }
+
+  .animate-bob {
+    animation: bob 2.8s ease-in-out infinite;
+  }
+  .animate-bob-slow {
+    animation: bob 3.8s ease-in-out infinite;
+  }
+  .animate-bob-fast {
+    animation: bob 2s ease-in-out infinite;
+  }
+  .animate-spin-slow {
+    animation: spin-slow 6s linear infinite;
+  }
+  .animate-pulse-soft {
+    animation: pulse-soft 3s ease-in-out infinite;
+  }
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.1); }
+}
+
+/* ── Glitch effect on "Noise" — 2 s cycle ─────────────── */
+.glitch-noise {
+  position: relative;
+  display: inline-block;
+  animation: noise-glitch 2s steps(1) infinite;
+}
+
+.glitch-noise::before,
+.glitch-noise::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: nowrap;
+}
+
+.glitch-noise::before {
+  color: #ff003c;
+  -webkit-text-fill-color: #ff003c;
+  clip-path: polygon(0 10%, 100% 10%, 100% 48%, 0 48%);
+  animation: glitch-red 2s steps(1) infinite;
+}
+
+.glitch-noise::after {
+  color: #00ffe1;
+  -webkit-text-fill-color: #00ffe1;
+  clip-path: polygon(0 52%, 100% 52%, 100% 88%, 0 88%);
+  animation: glitch-cyan 2s steps(1) infinite;
+}
+
+@keyframes noise-glitch {
+  0%,  55%, 100% { transform: none;                            filter: none; }
+  56%            { transform: translateX(5px)  skewX(-8deg);   filter: brightness(1.6); }
+  57%            { transform: translateX(-6px) skewX(8deg);    filter: brightness(0.8); }
+  58%            { transform: translateX(4px)  scaleY(0.95);   filter: brightness(1.4); }
+  59%            { transform: translateX(-3px) skewX(-4deg);   filter: brightness(0.7); }
+  60%            { transform: none;                            filter: none; }
+  75%            { transform: translateX(-3px);                filter: brightness(1.3); }
+  76%            { transform: translateX(3px);                 filter: brightness(0.8); }
+  77%            { transform: none;                            filter: none; }
+}
+
+@keyframes glitch-red {
+  0%,  55%, 100% { opacity: 0; transform: none; }
+  56%            { opacity: 1; transform: translateX(-9px); }
+  57%            { opacity: 1; transform: translateX(9px);  }
+  58%            { opacity: 0.9; transform: translateX(-6px); }
+  59%            { opacity: 1; transform: translateX(6px);  }
+  60%            { opacity: 0; transform: none; }
+  75%            { opacity: 0.95; transform: translateX(7px); }
+  76%            { opacity: 0.95; transform: translateX(-7px); }
+  77%            { opacity: 0; transform: none; }
+}
+
+@keyframes glitch-cyan {
+  0%,  55%, 100% { opacity: 0; transform: none; }
+  56%            { opacity: 1; transform: translateX(9px); }
+  57%            { opacity: 1; transform: translateX(-9px); }
+  58%            { opacity: 0.9; transform: translateX(6px); }
+  59%            { opacity: 1; transform: translateX(-6px); }
+  60%            { opacity: 0; transform: none; }
+  75%            { opacity: 0.95; transform: translateX(-7px); }
+  76%            { opacity: 0.95; transform: translateX(7px); }
+  77%            { opacity: 0; transform: none; }
+}

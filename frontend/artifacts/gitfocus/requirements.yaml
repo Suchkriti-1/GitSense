@@ -1,0 +1,10 @@
+packages:
+  "framer-motion": "For smooth scroll animations, reveal effects, and FAQ accordion"
+  "clsx": "For conditional class merging"
+  "tailwind-merge": "For merging tailwind classes safely"
+
+images: []
+
+notes:
+  - Landing page is purely presentational, no backend API integration required.
+  - Using smooth scrolling for in-page navigation.
