@@ -5,9 +5,21 @@ from app.config import FRONTEND_URL
 
 app = FastAPI()
 
+
+def normalize_origin(value: str) -> str:
+    return value.rstrip("/")
+
+
+allowed_origins = [
+    normalize_origin(FRONTEND_URL),
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
