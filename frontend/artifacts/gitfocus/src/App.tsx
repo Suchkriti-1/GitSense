@@ -12,6 +12,29 @@ import { AuthUser, buildGithubLoginUrl, fetchCurrentUser } from "@/lib/api";
 const queryClient = new QueryClient();
 const AUTH_STORAGE_KEY = "gitfocus-auth";
 
+function readStoredSession() {
+  if (typeof window === "undefined") {
+    return { token: null as string | null, user: null as AuthUser | null };
+  }
+
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+
+    if (!raw) {
+      return { token: null, user: null };
+    }
+
+    const parsed = JSON.parse(raw) as { token?: string; user?: AuthUser };
+
+    return {
+      token: parsed.token ?? null,
+      user: parsed.user ?? null,
+    };
+  } catch {
+    return { token: null, user: null };
+  }
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -46,9 +69,10 @@ function Router() {
 }
 
 function App() {
+  const storedSession = readStoredSession();
   const [isLoading, setIsLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [token, setToken] = useState<string | null>(storedSession.token);
+  const [user, setUser] = useState<AuthUser | null>(storedSession.user);
 
   const completeAuth = useCallback((nextToken: string, nextUser: AuthUser) => {
     setToken(nextToken);
@@ -76,9 +100,7 @@ function App() {
     let cancelled = false;
 
     async function restoreSession() {
-      const savedSession = localStorage.getItem(AUTH_STORAGE_KEY);
-
-      if (!savedSession) {
+      if (!storedSession.token) {
         if (!cancelled) {
           setIsLoading(false);
         }
@@ -86,20 +108,16 @@ function App() {
       }
 
       try {
-        const parsed = JSON.parse(savedSession) as { token?: string };
-
-        if (!parsed.token) {
-          throw new Error("Missing access token.");
-        }
-
-        const restoredUser = await fetchCurrentUser(parsed.token);
+        const restoredUser = await fetchCurrentUser(storedSession.token);
 
         if (!cancelled) {
-          completeAuth(parsed.token, restoredUser);
+          completeAuth(storedSession.token, restoredUser);
         }
       } catch {
         if (!cancelled) {
-          signOut();
+          if (!storedSession.user) {
+            signOut();
+          }
         }
       } finally {
         if (!cancelled) {
@@ -113,7 +131,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [completeAuth, signOut]);
+  }, [completeAuth, signOut, storedSession.token, storedSession.user]);
 
   const authValue = useMemo(
     () => ({
