@@ -182,3 +182,11 @@ def update_preferences(user_login: str, updates: dict[str, bool]) -> dict[str, b
     user_state["preferences"].update(updates)
     _save_all_state(state)
     return user_state["preferences"]
+
+
+def update_rule_counts(user_login: str, counts_by_id: dict[int, int]) -> list[dict[str, Any]]:
+    state, user_state = _get_user_state(user_login)
+    for rule in user_state["rules"]:
+        rule["count"] = counts_by_id.get(int(rule["id"]), 0)
+    _save_all_state(state)
+    return user_state["rules"]

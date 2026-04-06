@@ -165,11 +165,11 @@ export default function ConnectedDashboard() {
         setLoadingData(true);
         setError(null);
 
-        const [notificationsResponse, repositoriesResponse, dashboardState] = await Promise.all([
+        const [notificationsResponse, repositoriesResponse] = await Promise.all([
           fetchNotifications(token, false, 50),
           fetchRepositories(token),
-          fetchDashboardState(token),
         ]);
+        const dashboardState = await fetchDashboardState(token);
 
         if (!cancelled) {
           setNotifications(notificationsResponse.notifications);
