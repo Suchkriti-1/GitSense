@@ -542,7 +542,6 @@ export default function Dashboard() {
                     {[
                       { label: "Email digest", desc: "Daily summary of unread items", on: true },
                       { label: "Stale reminders", desc: "Notify after 5 days of inactivity", on: true },
-                      { label: "Slack integration", desc: "Send alerts to your Slack workspace", on: false },
                     ].map((pref, i) => (
                       <div key={i} className="flex items-center justify-between">
                         <div>
