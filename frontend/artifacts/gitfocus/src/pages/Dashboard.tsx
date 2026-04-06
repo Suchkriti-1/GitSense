@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useAuth } from "@/App";
@@ -64,6 +64,48 @@ export default function Dashboard() {
   const [newRuleAction, setNewRuleAction] = useState("Always notify");
 
   const handleSignOut = () => { signOut(); navigate("/"); };
+
+  // Notification sound + browser push
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [pushEnabled, setPushEnabled] = useState(false);
+
+  useEffect(() => {
+    audioRef.current = new Audio("/notification.mp3");
+    audioRef.current.volume = 0.5;
+    setPushEnabled(Notification.permission === "granted");
+  }, []);
+
+  const requestPermission = async () => {
+    if ("Notification" in window) {
+      const permission = await Notification.requestPermission();
+      setPushEnabled(permission === "granted");
+      return permission === "granted";
+    }
+    return false;
+  };
+
+  const sendNotification = (title: string, body: string) => {
+    audioRef.current?.play().catch(() => {});
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification(title, { body, icon: "/favicon.ico" });
+    }
+  };
+
+  // Poll backend every 30 seconds for new notifications
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/notifications/check`, {
+          headers: { Authorization: `Bearer ${user?.token}` },
+        });
+        const data = await res.json();
+        if (data.hasNew) {
+          sendNotification("Revv", data.message || "You have new items that need your attention.");
+        }
+      } catch (e) {}
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleAddRepo = () => {
     if (!newRepoName.trim()) return;
@@ -184,7 +226,7 @@ export default function Dashboard() {
           <AnimatePresence mode="wait">
 
             {activeTab === "action" && (
-              <motion.div key="action" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="p-6 max-w-5xl">
+              <motion.div key="action" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="p-6 max-w-5xl mx-auto w-full">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                   {STATS.map((stat, i) => (
                     <div key={i} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
@@ -250,7 +292,7 @@ export default function Dashboard() {
             )}
 
             {activeTab === "waiting" && (
-              <motion.div key="waiting" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="p-6 max-w-5xl">
+              <motion.div key="waiting" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="p-6 max-w-5xl mx-auto w-full">
                 <div className="mb-6">
                   <h1 className="text-xl font-display font-bold text-white">Waiting on Others</h1>
                   <p className="text-sm text-white/30 mt-0.5">Items you've contributed to — awaiting responses or reviews.</p>
@@ -284,7 +326,7 @@ export default function Dashboard() {
             )}
 
             {activeTab === "repos" && (
-              <motion.div key="repos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="p-6 max-w-5xl">
+              <motion.div key="repos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="p-6 max-w-5xl mx-auto w-full">
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h1 className="text-xl font-display font-bold text-white">Repositories</h1>
@@ -342,7 +384,7 @@ export default function Dashboard() {
             )}
 
             {activeTab === "rules" && (
-              <motion.div key="rules" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="p-6 max-w-5xl">
+              <motion.div key="rules" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="p-6 max-w-5xl mx-auto w-full">
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h1 className="text-xl font-display font-bold text-white">Custom Rules</h1>
@@ -425,7 +467,7 @@ export default function Dashboard() {
             )}
 
             {activeTab === "stale" && (
-              <motion.div key="stale" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="p-6 max-w-5xl">
+              <motion.div key="stale" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="p-6 max-w-5xl mx-auto w-full">
                 <div className="mb-6">
                   <h1 className="text-xl font-display font-bold text-white">Stale & Overdue</h1>
                   <p className="text-sm text-white/30 mt-0.5">Threads that have gone quiet and need a nudge.</p>
@@ -478,7 +520,7 @@ export default function Dashboard() {
             )}
 
             {activeTab === "settings" && (
-              <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="p-6 max-w-2xl">
+              <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="p-6 max-w-2xl mx-auto w-full">
                 <div className="mb-8">
                   <h1 className="text-xl font-display font-bold text-white">Settings</h1>
                   <p className="text-sm text-white/30 mt-0.5">Manage your account and notification preferences.</p>
@@ -500,7 +542,6 @@ export default function Dashboard() {
                     {[
                       { label: "Email digest", desc: "Daily summary of unread items", on: true },
                       { label: "Stale reminders", desc: "Notify after 5 days of inactivity", on: true },
-                      { label: "Browser push", desc: "Real-time desktop notifications", on: false },
                       { label: "Slack integration", desc: "Send alerts to your Slack workspace", on: false },
                     ].map((pref, i) => (
                       <div key={i} className="flex items-center justify-between">
@@ -513,6 +554,18 @@ export default function Dashboard() {
                         </button>
                       </div>
                     ))}
+                    {/* Browser push — functional */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-white/80">Browser push</p>
+                        <p className="text-xs text-white/30">Real-time desktop notifications + sound</p>
+                      </div>
+                      <button
+                        onClick={requestPermission}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-all ${pushEnabled ? "bg-white border-white" : "bg-white/[0.04] border-white/10"}`}>
+                        <span className={`inline-block h-4 w-4 rounded-full transition-transform ${pushEnabled ? "translate-x-6 bg-black" : "translate-x-1 bg-white/30"}`} />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5">
