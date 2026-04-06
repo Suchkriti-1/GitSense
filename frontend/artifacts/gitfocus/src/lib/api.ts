@@ -52,6 +52,36 @@ export interface NotificationsResponse {
   };
 }
 
+export interface DashboardTrackedRepo {
+  id: number;
+  name: string;
+  org: string;
+  active: boolean;
+  stars: number;
+}
+
+export interface DashboardRule {
+  id: number;
+  name: string;
+  active: boolean;
+  trigger: string;
+  action: "Always notify" | "Priority alert" | "Silent / archive";
+  count: number;
+}
+
+export interface DashboardPreferences {
+  email_digest: boolean;
+  stale_reminders: boolean;
+  browser_push: boolean;
+  slack_integration: boolean;
+}
+
+export interface DashboardState {
+  repositories: DashboardTrackedRepo[];
+  rules: DashboardRule[];
+  preferences: DashboardPreferences;
+}
+
 const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 export const API_BASE_URL = (rawApiBaseUrl || "http://localhost:8000").replace(/\/$/, "");
 
@@ -82,16 +112,31 @@ export function normalizeUser(user: {
 }
 
 async function apiGet<T>(path: string, params?: Record<string, string | number | boolean>) {
+  return apiRequest<T>("GET", path, { params });
+}
+
+async function apiRequest<T>(
+  method: string,
+  path: string,
+  options?: {
+    params?: Record<string, string | number | boolean>;
+    body?: unknown;
+  },
+) {
   const search = new URLSearchParams();
 
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
+  if (options?.params) {
+    Object.entries(options.params).forEach(([key, value]) => {
       search.set(key, String(value));
     });
   }
 
   const url = `${API_BASE_URL}${path}${search.size ? `?${search.toString()}` : ""}`;
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    method,
+    headers: options?.body ? { "Content-Type": "application/json" } : undefined,
+    body: options?.body ? JSON.stringify(options.body) : undefined,
+  });
 
   if (!response.ok) {
     let message = `Request failed with status ${response.status}`;
@@ -106,6 +151,10 @@ async function apiGet<T>(path: string, params?: Record<string, string | number |
     }
 
     throw new Error(message);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;
@@ -135,5 +184,56 @@ export async function fetchNotifications(token: string, important = false, limit
     important,
     page: 1,
     limit,
+  });
+}
+
+export async function fetchDashboardState(token: string) {
+  return apiGet<DashboardState>("/dashboard/state", { token });
+}
+
+export async function createTrackedRepository(token: string, name: string, org?: string) {
+  return apiRequest<DashboardTrackedRepo>("POST", "/dashboard/repos", {
+    params: { token },
+    body: { name, org },
+  });
+}
+
+export async function updateTrackedRepository(token: string, repoId: number, active: boolean) {
+  return apiRequest<DashboardTrackedRepo>("PATCH", `/dashboard/repos/${repoId}`, {
+    params: { token },
+    body: { active },
+  });
+}
+
+export async function createDashboardRule(
+  token: string,
+  payload: { name: string; label: string; action: DashboardRule["action"] },
+) {
+  return apiRequest<DashboardRule>("POST", "/dashboard/rules", {
+    params: { token },
+    body: payload,
+  });
+}
+
+export async function updateDashboardRule(token: string, ruleId: number, active: boolean) {
+  return apiRequest<DashboardRule>("PATCH", `/dashboard/rules/${ruleId}`, {
+    params: { token },
+    body: { active },
+  });
+}
+
+export async function deleteDashboardRule(token: string, ruleId: number) {
+  return apiRequest<void>("DELETE", `/dashboard/rules/${ruleId}`, {
+    params: { token },
+  });
+}
+
+export async function updateDashboardPreferences(
+  token: string,
+  updates: Partial<DashboardPreferences>,
+) {
+  return apiRequest<DashboardPreferences>("PATCH", "/dashboard/preferences", {
+    params: { token },
+    body: updates,
   });
 }
