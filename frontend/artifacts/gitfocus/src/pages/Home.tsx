@@ -73,7 +73,7 @@ export default function Home() {
                 onClick={() => setSignInOpen(true)}
                 className="w-full sm:w-auto px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-white/90 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 text-lg"
               >
-                Start for Free <ArrowRight size={20} />
+                Start Here <ArrowRight size={20} />
               </button>
               <a
                 href="#how-it-works"
@@ -122,7 +122,7 @@ export default function Home() {
                 { icon: LayoutDashboard, title: "PR & Issue Dashboard", desc: "A clean, prioritized view of open pull requests and issues needing your attention." },
                 { icon: Settings, title: "Custom Rules", desc: "Set granular notification rules for mentions, assignments, and priority labels." },
                 { icon: AlertTriangle, title: "Missed Issue Detection", desc: "Never miss a critical bug or tagged issue that slipped through your email." },
-                { icon: Clock, title: "Stale Reminders", desc: "Get gently nudged on pending code reviews and inactive discussion threads." },
+                { icon: Clock, title: "Priority Engine", desc: "Automatically ranks issues and pull requests so you always know what to work on next." },
               ].map((feature, i) => (
                 <motion.div
                   key={i}
@@ -215,7 +215,6 @@ export default function Home() {
             >
               <div className="hidden md:flex w-64 border-r border-white/5 bg-[#050505] flex-col p-4">
                 <div className="flex items-center gap-2 mb-8 px-2">
-                  <Target size={18} />
                   <span className="font-display font-bold">Revv</span>
                 </div>
                 <div className="space-y-1">
@@ -285,7 +284,7 @@ export default function Home() {
           <div className="px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
-                Frequently Asked Questions
+                Let’s Clear Things Up 
               </h2>
             </div>
             <Accordion items={[
@@ -293,7 +292,7 @@ export default function Home() {
               { id: "faq-2", question: "What GitHub permissions does it need?", answer: "We request the minimal 'repo' scope for reading issue and PR metadata, and 'read:org' if you want to track organization repositories. We do not require write access to your repositories." },
               { id: "faq-3", question: "Can I filter notifications by label?", answer: "Absolutely. With custom rules, you can prioritize notifications based on specific labels like 'urgent', 'bug', or 'needs-review', while muting others like 'wontfix' or 'duplicate'." },
               { id: "faq-4", question: "Is there a mobile app?", answer: "Currently, Revv is a responsive web application that works great on mobile browsers. A dedicated native iOS and Android app with push notifications is on our roadmap." },
-              { id: "faq-5", question: "How is this different from GitHub's built-in notifications?", answer: "GitHub's default inbox acts like email — everything flows chronologically. Revv acts like a smart to-do list that highlights what actually needs your attention right now." },
+              { id: "faq-5", question: "How is this different from GitHub's built-in notifications?", answer: "GitHub’s default inbox works like email — everything flows chronologically. Revv keeps your workflow clean, so you stay focused without being pulled into every discussion." },
             ]} />
           </div>
         </section>
@@ -326,9 +325,9 @@ export default function Home() {
               onClick={() => setSignInOpen(true)}
               className="px-10 py-5 bg-white text-black text-xl font-bold rounded-xl hover:bg-white/90 transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.2)]"
             >
-              Get Started for Free
+              Get Started 
             </button>
-            <p className="mt-6 text-sm text-white/40 font-mono">No credit card required. Cancel anytime.</p>
+            <p className="mt-6 text-sm text-white/40 font-mono">Revv up your GitHub workflow.</p>
           </div>
         </section>
 
