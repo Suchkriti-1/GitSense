@@ -909,8 +909,7 @@ export default function ConnectedDashboard() {
                       {[
                         { key: "email_digest" as const, label: "Email digest", desc: "Daily summary of unread items" },
                         { key: "stale_reminders" as const, label: "Stale reminders", desc: "Track quiet threads after 3+ days" },
-                        { key: "browser_push" as const, label: "Browser push", desc: "Enable real-time desktop notifications" },
-                        { key: "slack_integration" as const, label: "Slack integration", desc: "Forward alerts to Slack when connected" },
+                        { key: "browser_push" as const, label: "Browser push", desc: "Enable real-time desktop notifications" }
                       ].map((pref) => (
                         <div key={pref.key} className="flex items-center justify-between">
                           <div>
