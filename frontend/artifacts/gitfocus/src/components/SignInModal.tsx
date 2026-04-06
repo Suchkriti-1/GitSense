@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, CheckSquare, Github } from "lucide-react";
 import { useAuth } from "@/App";
+import { useLocation } from "wouter";
 
 interface SignInModalProps {
   open: boolean;
@@ -9,10 +10,12 @@ interface SignInModalProps {
 
 export function SignInModal({ open, onClose }: SignInModalProps) {
   const { signIn } = useAuth();
+  const [, navigate] = useLocation();
 
   const handleSignIn = () => {
-    onClose();
     signIn();
+    onClose();
+    navigate("/dashboard");
   };
 
   return (
@@ -79,15 +82,6 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
                     ))}
                   </div>
                 </div>
-              </div>
-
-              <div className="px-8 pb-8 text-center">
-                <p className="text-white/20 text-xs">
-                  By signing in you agree to our{" "}
-                  <a href="#" className="underline hover:text-white/40 transition-colors">Terms</a>{" "}
-                  and{" "}
-                  <a href="#" className="underline hover:text-white/40 transition-colors">Privacy Policy</a>.
-                </p>
               </div>
             </motion.div>
           </div>
