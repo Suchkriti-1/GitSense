@@ -198,7 +198,7 @@ def filter_notifications(
             "repository": repository_name,
             "type": subject.get("type"),
             "title": subject.get("title"),
-            "url": subject.get("url"),
+            "url": details.get("html_url") or subject.get("url"),
             "reason": reason,
             "important": important,
             "priority": priority,

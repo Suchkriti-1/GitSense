@@ -145,6 +145,7 @@ export default function ConnectedDashboard() {
   const [workingRepoKey, setWorkingRepoKey] = useState<string | null>(null);
   const [workingRuleId, setWorkingRuleId] = useState<number | null>(null);
   const [savingPreference, setSavingPreference] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -193,7 +194,7 @@ export default function ConnectedDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, reloadKey]);
 
   const visibleNotifications = useMemo(
     () => notifications.filter((item) => !dismissedIds.includes(item.id)),
@@ -277,6 +278,7 @@ export default function ConnectedDashboard() {
       setNewRepoName("");
       setNewRepoOrg("");
       setShowAddRepo(false);
+      setReloadKey((current) => current + 1);
     } catch (repoError) {
       setError(repoError instanceof Error ? repoError.message : "Unable to track that repository.");
     } finally {
@@ -296,6 +298,7 @@ export default function ConnectedDashboard() {
         const created = await createTrackedRepository(token, card.name, card.org);
         setTrackedRepositories((current) => [...current, created]);
       }
+      setReloadKey((current) => current + 1);
     } catch (repoError) {
       setError(repoError instanceof Error ? repoError.message : "Unable to update repository tracking.");
     } finally {
@@ -318,6 +321,7 @@ export default function ConnectedDashboard() {
       setNewRuleLabel("");
       setNewRuleAction("Always notify");
       setShowAddRule(false);
+      setReloadKey((current) => current + 1);
     } catch (ruleError) {
       setError(ruleError instanceof Error ? ruleError.message : "Unable to create rule.");
     } finally {
@@ -332,6 +336,7 @@ export default function ConnectedDashboard() {
       setWorkingRuleId(rule.id);
       const updated = await updateDashboardRule(token, rule.id, !rule.active);
       setRules((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      setReloadKey((current) => current + 1);
     } catch (ruleError) {
       setError(ruleError instanceof Error ? ruleError.message : "Unable to update rule.");
     } finally {
@@ -346,6 +351,7 @@ export default function ConnectedDashboard() {
       setWorkingRuleId(ruleId);
       await deleteDashboardRule(token, ruleId);
       setRules((current) => current.filter((rule) => rule.id !== ruleId));
+      setReloadKey((current) => current + 1);
     } catch (ruleError) {
       setError(ruleError instanceof Error ? ruleError.message : "Unable to delete rule.");
     } finally {
@@ -386,6 +392,11 @@ export default function ConnectedDashboard() {
   const handleSignOut = () => {
     signOut();
     navigate("/", { replace: true });
+  };
+
+  const openNotification = (url: string | null) => {
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const recentNotifications = visibleNotifications.slice(0, 6);
@@ -615,7 +626,14 @@ export default function ConnectedDashboard() {
                         const status = getStatus(item);
 
                         return (
-                          <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }} className="group flex items-start gap-4 p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10 transition-all">
+                          <motion.div
+                            key={item.id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.04 }}
+                            onClick={() => openNotification(item.url)}
+                            className={`group flex items-start gap-4 p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10 transition-all ${item.url ? "cursor-pointer" : ""}`}
+                          >
                             <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${status.dot}`} />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -630,7 +648,15 @@ export default function ConnectedDashboard() {
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <span className={`px-2.5 py-1 rounded-lg border text-xs font-medium ${status.className}`}>{status.label}</span>
-                              <button onClick={() => setDismissedIds((current) => [...current, item.id])} className="opacity-0 group-hover:opacity-100 transition-opacity text-white/30 hover:text-white text-xs">Dismiss</button>
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setDismissedIds((current) => [...current, item.id]);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-white/30 hover:text-white text-xs"
+                              >
+                                Dismiss
+                              </button>
                             </div>
                           </motion.div>
                         );
@@ -650,7 +676,11 @@ export default function ConnectedDashboard() {
                     {waitingItems.length === 0 ? <EmptyState title="Nothing pending" copy="No lower-priority threads are waiting right now." /> : waitingItems.map((item) => {
                       const Icon = getNotificationIcon(item.type);
                       return (
-                        <div key={item.id} className="flex items-start gap-4 p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                        <div
+                          key={item.id}
+                          onClick={() => openNotification(item.url)}
+                          className={`flex items-start gap-4 p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] ${item.url ? "cursor-pointer hover:bg-white/[0.04]" : ""}`}
+                        >
                           <div className="mt-1 w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
                             <Icon size={14} className="text-purple-400" />
                           </div>
@@ -833,7 +863,11 @@ export default function ConnectedDashboard() {
                   </div>
                   <div className="space-y-2">
                     {staleItems.length === 0 ? <EmptyState title="No stale threads" copy="Everything recent is still fresh." /> : staleItems.map((item) => (
-                      <div key={item.id} className="flex items-start gap-4 p-5 rounded-2xl border border-red-500/10 bg-red-500/[0.03]">
+                      <div
+                        key={item.id}
+                        onClick={() => openNotification(item.url)}
+                        className={`flex items-start gap-4 p-5 rounded-2xl border border-red-500/10 bg-red-500/[0.03] ${item.url ? "cursor-pointer hover:bg-red-500/[0.05]" : ""}`}
+                      >
                         <div className="w-9 h-9 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
                           <Clock size={16} className="text-red-400" />
                         </div>
