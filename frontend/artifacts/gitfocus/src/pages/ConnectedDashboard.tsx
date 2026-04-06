@@ -907,7 +907,6 @@ export default function ConnectedDashboard() {
                     <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-4 font-mono">Notifications</h3>
                     <div className="space-y-4">
                       {[
-                        { key: "email_digest" as const, label: "Email digest", desc: "Daily summary of unread items" },
                         { key: "stale_reminders" as const, label: "Stale reminders", desc: "Track quiet threads after 3+ days" },
                         { key: "browser_push" as const, label: "Browser push", desc: "Enable real-time desktop notifications" }
                       ].map((pref) => (
