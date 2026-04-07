@@ -82,7 +82,9 @@ export interface DashboardState {
   preferences: DashboardPreferences;
 }
 
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const rawApiBaseUrl =
+  import.meta.env.VITE_API_BASE_URL?.trim() ||
+  import.meta.env.VITE_API_URL?.trim();
 export const API_BASE_URL = (rawApiBaseUrl || "http://localhost:8000").replace(/\/$/, "");
 
 function getInitials(value: string) {
@@ -132,11 +134,17 @@ async function apiRequest<T>(
   }
 
   const url = `${API_BASE_URL}${path}${search.size ? `?${search.toString()}` : ""}`;
-  const response = await fetch(url, {
-    method,
-    headers: options?.body ? { "Content-Type": "application/json" } : undefined,
-    body: options?.body ? JSON.stringify(options.body) : undefined,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      method,
+      headers: options?.body ? { "Content-Type": "application/json" } : undefined,
+      body: options?.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch {
+    throw new Error(`Unable to reach API at ${API_BASE_URL}. Check your frontend env and backend server.`);
+  }
 
   if (!response.ok) {
     let message = `Request failed with status ${response.status}`;

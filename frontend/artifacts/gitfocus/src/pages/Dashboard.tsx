@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useAuth } from "@/App";
+import { API_BASE_URL } from "@/lib/api";
 import {
   GitPullRequest, AlertTriangle, Clock, Bell, Settings,
   Filter, Tag, MessageSquare, Search, LogOut,
@@ -95,7 +96,7 @@ export default function Dashboard() {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/notifications/check`, {
+        const res = await fetch(`${API_BASE_URL}/notifications/check`, {
           headers: { Authorization: `Bearer ${user?.token}` },
         });
         const data = await res.json();

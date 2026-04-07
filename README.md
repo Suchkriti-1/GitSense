@@ -34,7 +34,7 @@ Revv/
 │   │   ├── services/              # API calls
 │   │   ├── App.jsx
 │   │   └── main.jsx
-│   ├── .env                       # VITE_API_URL
+│   ├── .env                       # VITE_API_BASE_URL
 │   ├── index.html
 │   ├── package.json
 │   └── vite.config.js
@@ -78,7 +78,7 @@ npm run dev
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn main:app --reload
 ```
 
 ## GitHub OAuth Flow
