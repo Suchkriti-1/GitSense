@@ -237,3 +237,35 @@ export async function updateDashboardPreferences(
     body: updates,
   });
 }
+
+// Real-time API functions
+export interface GitHubActivity {
+  issues: any[];
+  pull_requests: any[];
+  total_issues: number;
+  total_prs: number;
+}
+
+export interface RealtimeUpdate {
+  type: "initial_data" | "updates" | "dashboard_update" | "error";
+  data?: GitHubActivity;
+  notifications?: NotificationItem[];
+  summary?: NotificationSummary;
+  activity?: GitHubActivity;
+  rule_counts?: any;
+  changes?: {
+    new_issues?: any[];
+    new_prs?: any[];
+    status_changes?: any[];
+  };
+  message?: string;
+}
+
+export async function fetchGitHubActivity(token: string): Promise<GitHubActivity> {
+  return apiGet<GitHubActivity>("/realtime/activity", { token });
+}
+
+export function connectRealtimeWebSocket(token: string): WebSocket {
+  const wsUrl = API_BASE_URL.replace(/^http/, "ws") + `/realtime/ws?token=${encodeURIComponent(token)}`;
+  return new WebSocket(wsUrl);
+}

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import requests
+from typing import List, Dict, Any
 
 
 def _github_headers(token: str, use_bearer: bool = False):
@@ -47,6 +48,80 @@ def github_notifications(token: str):
 
     except requests.exceptions.RequestException as e:
         raise Exception(f"Error fetching notifications: {str(e)}")
+
+
+def get_repo_issues(token: str, owner: str, repo: str, state: str = "open") -> List[Dict[str, Any]]:
+    """Fetch issues for a specific repository"""
+    url = f"https://api.github.com/repos/{owner}/{repo}/issues"
+    headers = _github_headers(token)
+    params = {"state": state, "per_page": 100}
+
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching issues for {owner}/{repo}: {str(e)}")
+        return []
+
+
+def get_repo_pull_requests(token: str, owner: str, repo: str, state: str = "open") -> List[Dict[str, Any]]:
+    """Fetch pull requests for a specific repository"""
+    url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
+    headers = _github_headers(token)
+    params = {"state": state, "per_page": 100}
+
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching PRs for {owner}/{repo}: {str(e)}")
+        return []
+
+
+def get_user_activity(token: str) -> Dict[str, Any]:
+    """Fetch combined issues and PRs activity for user's repositories"""
+    repos = get_user_repos(token)
+    activity = {
+        "issues": [],
+        "pull_requests": [],
+        "total_issues": 0,
+        "total_prs": 0
+    }
+
+    for repo in repos[:10]:  # Limit to first 10 repos to avoid rate limits
+        owner = repo["owner"]["login"]
+        repo_name = repo["name"]
+
+        # Get issues (includes PRs, so we'll filter)
+        issues = get_repo_issues(token, owner, repo_name)
+        actual_issues = [issue for issue in issues if "pull_request" not in issue]
+
+        # Get PRs
+        prs = get_repo_pull_requests(token, owner, repo_name)
+
+        # Add repo info to each item
+        for issue in actual_issues:
+            issue["repository"] = {
+                "name": repo_name,
+                "full_name": repo["full_name"],
+                "owner": owner
+            }
+            activity["issues"].append(issue)
+
+        for pr in prs:
+            pr["repository"] = {
+                "name": repo_name,
+                "full_name": repo["full_name"],
+                "owner": owner
+            }
+            activity["pull_requests"].append(pr)
+
+    activity["total_issues"] = len(activity["issues"])
+    activity["total_prs"] = len(activity["pull_requests"])
+
+    return activity
 
 
 def _normalize_rule_trigger(trigger: str) -> str:
