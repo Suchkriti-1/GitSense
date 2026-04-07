@@ -92,7 +92,10 @@ class ConnectionManager:
                 summary = generate_summary(filtered_notifications)
 
                 # Fetch activity data
-                current_activity = get_user_activity(token)
+                current_activity = get_user_activity(
+                    token,
+                    tracked_repositories=dashboard_state["repositories"],
+                )
 
                 # Check if there are changes
                 notifications_changed = self._notifications_changed(last_notifications, filtered_notifications)

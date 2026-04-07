@@ -3,6 +3,8 @@ from __future__ import annotations
 import requests
 from typing import List, Dict, Any
 
+REQUEST_TIMEOUT = 15
+
 
 def _github_headers(token: str, use_bearer: bool = False):
     scheme = "Bearer" if use_bearer else "token"
@@ -15,21 +17,34 @@ def _github_headers(token: str, use_bearer: bool = False):
 def get_user_repos(token: str):
     url = "https://api.github.com/user/repos"
     headers = _github_headers(token)
+    params = {"per_page": 100, "page": 1, "sort": "updated"}
+    repos: list[dict[str, Any]] = []
 
-    response = requests.get(url, headers=headers)
+    while True:
+        response = requests.get(url, headers=headers, params=params, timeout=REQUEST_TIMEOUT)
 
-    if response.status_code != 200:
-        raise Exception("Failed to fetch user repositories from GitHub.")
-    
-    data = response.json()
-    return data
+        if response.status_code != 200:
+            raise Exception("Failed to fetch user repositories from GitHub.")
+
+        page_items = response.json()
+        if not isinstance(page_items, list):
+            raise Exception("GitHub returned an unexpected repositories response.")
+
+        repos.extend(page_items)
+
+        if len(page_items) < params["per_page"]:
+            break
+
+        params["page"] += 1
+
+    return repos
 
 
 def get_authenticated_user(token: str):
     url = "https://api.github.com/user"
     headers = _github_headers(token)
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
     if response.status_code != 200:
         raise Exception("Failed to fetch authenticated user from GitHub.")
@@ -41,7 +56,7 @@ def github_notifications(token: str):
     headers = _github_headers(token, use_bearer=True)
 
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         data = response.json()
         return data
@@ -57,7 +72,7 @@ def get_repo_issues(token: str, owner: str, repo: str, state: str = "open") -> L
     params = {"state": state, "per_page": 100}
 
     try:
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(url, headers=headers, params=params, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
@@ -72,7 +87,7 @@ def get_repo_pull_requests(token: str, owner: str, repo: str, state: str = "open
     params = {"state": state, "per_page": 100}
 
     try:
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(url, headers=headers, params=params, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
@@ -80,9 +95,71 @@ def get_repo_pull_requests(token: str, owner: str, repo: str, state: str = "open
         return []
 
 
-def get_user_activity(token: str) -> Dict[str, Any]:
-    """Fetch combined issues and PRs activity for user's repositories"""
+def get_repository(token: str, owner: str, repo: str) -> Dict[str, Any] | None:
+    url = f"https://api.github.com/repos/{owner}/{repo}"
+    headers = _github_headers(token)
+
+    try:
+        response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        data = response.json()
+        return data if isinstance(data, dict) else None
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching repo {owner}/{repo}: {str(e)}")
+        return None
+
+
+def _select_activity_repositories(
+    token: str,
+    tracked_repositories: list[dict[str, Any]] | None = None,
+    max_repositories: int = 10,
+) -> list[dict[str, Any]]:
     repos = get_user_repos(token)
+    repo_by_full_name = {
+        str(repo.get("full_name", "")).strip().lower(): repo
+        for repo in repos
+        if isinstance(repo, dict)
+    }
+
+    active_tracked = [
+        repo for repo in (tracked_repositories or [])
+        if isinstance(repo, dict) and repo.get("active")
+    ]
+
+    if active_tracked:
+        selected: list[dict[str, Any]] = []
+        seen: set[str] = set()
+
+        for tracked_repo in active_tracked:
+            full_name = f"{tracked_repo.get('org', '').strip()}/{tracked_repo.get('name', '').strip()}".strip("/").lower()
+            if not full_name or full_name in seen:
+                continue
+
+            repo = repo_by_full_name.get(full_name)
+            if repo is None:
+                org = str(tracked_repo.get("org", "")).strip()
+                name = str(tracked_repo.get("name", "")).strip()
+                if org and name:
+                    repo = get_repository(token, org, name)
+
+            if repo:
+                selected.append(repo)
+                seen.add(full_name)
+
+            if len(selected) >= max_repositories:
+                break
+
+        if selected:
+            return selected
+
+    return repos[:max_repositories]
+
+
+def get_user_activity(token: str, tracked_repositories: list[dict[str, Any]] | None = None) -> Dict[str, Any]:
+    """Fetch combined issues and PRs activity for the user's tracked or most recently updated repositories."""
+    repos = _select_activity_repositories(token, tracked_repositories=tracked_repositories)
     activity = {
         "issues": [],
         "pull_requests": [],
@@ -90,7 +167,7 @@ def get_user_activity(token: str) -> Dict[str, Any]:
         "total_prs": 0
     }
 
-    for repo in repos[:10]:  # Limit to first 10 repos to avoid rate limits
+    for repo in repos:
         owner = repo["owner"]["login"]
         repo_name = repo["name"]
 
@@ -134,7 +211,7 @@ def _fetch_subject_details(token: str, url: str | None, cache: dict[str, dict]) 
     if url in cache:
         return cache[url]
 
-    response = requests.get(url, headers=_github_headers(token))
+    response = requests.get(url, headers=_github_headers(token), timeout=REQUEST_TIMEOUT)
     if response.status_code != 200:
         cache[url] = {}
         return {}

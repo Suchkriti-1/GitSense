@@ -14,11 +14,13 @@ export function useRealtimeDashboard(token: string | null) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [summary, setSummary] = useState<NotificationSummary | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionMode, setConnectionMode] = useState<"live" | "polling" | "offline">("offline");
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const prevNotificationIdsRef = useRef<Set<string>>(new Set());
   const initializedRef = useRef(false);
+  const hasSnapshotRef = useRef(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -32,6 +34,7 @@ export function useRealtimeDashboard(token: string | null) {
       ws.onopen = () => {
         console.log("WebSocket connected");
         setIsConnected(true);
+        setConnectionMode("live");
         setError(null);
       };
 
@@ -72,6 +75,7 @@ export function useRealtimeDashboard(token: string | null) {
       ws.onclose = () => {
         console.log("WebSocket disconnected");
         setIsConnected(false);
+        setConnectionMode((current) => (hasSnapshotRef.current ? "polling" : current === "live" ? "offline" : current));
         wsRef.current = null;
 
         // Auto-reconnect after 5 seconds
@@ -82,12 +86,14 @@ export function useRealtimeDashboard(token: string | null) {
 
       ws.onerror = (error) => {
         console.error("WebSocket error:", error);
-        setError("Connection failed");
+        setConnectionMode((current) => (hasSnapshotRef.current ? "polling" : current));
+        setError("Live connection unavailable. Refreshing automatically.");
       };
 
     } catch (err) {
       console.error("Failed to connect WebSocket:", err);
-      setError("Failed to establish connection");
+      setConnectionMode((current) => (hasSnapshotRef.current ? "polling" : current));
+      setError("Live connection unavailable. Refreshing automatically.");
     }
   }, [token]);
 
@@ -124,11 +130,14 @@ export function useRealtimeDashboard(token: string | null) {
       setSummary(notificationsData.summary);
       prevNotificationIdsRef.current = new Set(notificationsData.notifications.map((item) => item.id));
       initializedRef.current = true;
+      hasSnapshotRef.current = true;
       setLastUpdate(new Date());
+      setConnectionMode((current) => (current === "live" ? current : "polling"));
       setError(null);
     } catch (err) {
       console.error("Failed to fetch initial activity:", err);
-      setError("Failed to load activity data");
+      setConnectionMode(hasSnapshotRef.current ? "polling" : "offline");
+      setError(hasSnapshotRef.current ? "Live refresh is temporarily delayed." : "Failed to load activity data");
     }
   }, [token]);
 
@@ -146,11 +155,24 @@ export function useRealtimeDashboard(token: string | null) {
     };
   }, [token, connect, disconnect, fetchInitialData]);
 
+  useEffect(() => {
+    if (!token) return undefined;
+
+    const interval = window.setInterval(() => {
+      void fetchInitialData();
+    }, 30000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [fetchInitialData, token]);
+
   return {
     activity,
     notifications,
     summary,
     isConnected,
+    connectionMode,
     error,
     lastUpdate,
     refetch: fetchInitialData,

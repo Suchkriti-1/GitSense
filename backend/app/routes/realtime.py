@@ -1,6 +1,8 @@
-from fastapi import APIRouter, WebSocket, Depends, HTTPException
+from fastapi import APIRouter, WebSocket, HTTPException
 from app.services.realtime_service import manager
 from app.services.github_service import get_authenticated_user
+from app.routes.dashboard import resolve_user_login
+from app.services.dashboard_service import get_dashboard_state
 
 router = APIRouter()
 
@@ -36,7 +38,9 @@ async def get_current_activity(token: str):
     """Get current GitHub activity (issues and PRs)"""
     try:
         from app.services.github_service import get_user_activity
-        activity = get_user_activity(token)
+        user_login = resolve_user_login(token)
+        dashboard_state = get_dashboard_state(user_login)
+        activity = get_user_activity(token, tracked_repositories=dashboard_state["repositories"])
         return activity
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

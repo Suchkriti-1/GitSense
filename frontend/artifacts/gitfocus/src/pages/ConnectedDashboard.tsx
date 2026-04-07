@@ -110,6 +110,27 @@ function getStatus(notification: NotificationItem) {
   };
 }
 
+function getConnectionPresentation(mode: "live" | "polling" | "offline") {
+  if (mode === "live") {
+    return {
+      dot: "bg-green-400",
+      label: "Live",
+    };
+  }
+
+  if (mode === "polling") {
+    return {
+      dot: "bg-yellow-400",
+      label: "Auto-refresh",
+    };
+  }
+
+  return {
+    dot: "bg-red-400",
+    label: "Offline",
+  };
+}
+
 function EmptyState({ title, copy }: { title: string; copy: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -149,7 +170,15 @@ export default function ConnectedDashboard() {
   const [reloadKey, setReloadKey] = useState(0);
 
   // Real-time GitHub dashboard data
-  const { notifications: realtimeNotifications, summary: realtimeSummary, activity, isConnected, error: realtimeError, lastUpdate } = useRealtimeDashboard(token);
+  const {
+    notifications: realtimeNotifications,
+    summary: realtimeSummary,
+    activity,
+    connectionMode,
+    error: realtimeError,
+    lastUpdate,
+  } = useRealtimeDashboard(token);
+  const connectionPresentation = getConnectionPresentation(connectionMode);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -539,11 +568,11 @@ export default function ConnectedDashboard() {
           </div>
           <div className="flex items-center gap-2 pl-3 border-l border-white/10">
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`} title={isConnected ? 'Connected' : 'Disconnected'} />
-              <span className="text-xs text-white/40 hidden lg:block">
-                {isConnected ? 'Live' : 'Offline'}
-              </span>
-            </div>
+                <div className={`w-2 h-2 rounded-full ${connectionPresentation.dot}`} title={connectionPresentation.label} />
+                <span className="text-xs text-white/40 hidden lg:block">
+                  {connectionPresentation.label}
+                </span>
+              </div>
             <div className="w-7 h-7 bg-white/10 text-white text-xs font-bold rounded-full flex items-center justify-center">
               {user?.avatar}
             </div>
@@ -692,17 +721,17 @@ export default function ConnectedDashboard() {
                       <h1 className="text-xl font-display font-bold text-white">Live GitHub Activity</h1>
                       <p className="text-sm text-white/30 mt-0.5">Real-time issues and pull requests from your repositories.</p>
                       <div className="flex items-center gap-2 mt-2">
-                        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`} />
-                        <span className="text-xs text-white/40">
-                          {isConnected ? 'Live' : 'Disconnected'} {lastUpdate && `• Updated ${formatRelativeAge(lastUpdate.toISOString())}`}
-                        </span>
+                          <div className={`w-2 h-2 rounded-full ${connectionPresentation.dot}`} />
+                          <span className="text-xs text-white/40">
+                            {connectionPresentation.label} {lastUpdate && `• Updated ${formatRelativeAge(lastUpdate.toISOString())}`}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    {realtimeError && (
-                      <div className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
-                        {realtimeError}
-                      </div>
-                    )}
+                      {realtimeError && (
+                        <div className={`text-sm rounded-lg px-3 py-2 ${connectionMode === "offline" ? "text-red-400 bg-red-400/10 border border-red-400/20" : "text-yellow-300 bg-yellow-400/10 border border-yellow-400/20"}`}>
+                          {realtimeError}
+                        </div>
+                      )}
                   </div>
 
                   {activity ? (
