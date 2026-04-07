@@ -1,10 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import auth, dashboard, github, notification
+from app.routes import auth, dashboard, github, notification, realtime
 from app.config import FRONTEND_URL
 
 app = FastAPI()
-
 
 def normalize_origin(value: str) -> str:
     return value.rstrip("/")
@@ -29,6 +28,7 @@ app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(github.router, prefix="/repos", tags=["repos"])
 app.include_router(notification.router, prefix="/notifications", tags=["notifications"])
 app.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
+app.include_router(realtime.router, prefix="/realtime", tags=["realtime"])
 
 @app.get("/health")
 def health_check():

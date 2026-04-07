@@ -40,8 +40,9 @@ import {
   updateDashboardRule,
   updateTrackedRepository,
 } from "@/lib/api";
+import { useRealtimeDashboard } from "@/hooks/useRealtimeActivity";
 
-type Tab = "action" | "waiting" | "repos" | "rules" | "stale" | "settings";
+type Tab = "action" | "waiting" | "repos" | "rules" | "stale" | "settings" | "activity";
 type RepositoryCard = {
   key: string;
   trackedId: number | null;
@@ -147,6 +148,9 @@ export default function ConnectedDashboard() {
   const [savingPreference, setSavingPreference] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
+  // Real-time GitHub dashboard data
+  const { notifications: realtimeNotifications, summary: realtimeSummary, activity, isConnected, error: realtimeError, lastUpdate } = useRealtimeDashboard(token);
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       navigate("/", { replace: true });
@@ -166,15 +170,13 @@ export default function ConnectedDashboard() {
         setLoadingData(true);
         setError(null);
 
-        const [notificationsResponse, repositoriesResponse] = await Promise.all([
-          fetchNotifications(token, false, 50),
+        // Load repositories and dashboard state (notifications will come from real-time connection)
+        const [repositoriesResponse, dashboardState] = await Promise.all([
           fetchRepositories(token),
+          fetchDashboardState(token),
         ]);
-        const dashboardState = await fetchDashboardState(token);
 
         if (!cancelled) {
-          setNotifications(notificationsResponse.notifications);
-          setSummary(notificationsResponse.summary);
           setRepositories(repositoriesResponse);
           setTrackedRepositories(dashboardState.repositories);
           setRules(dashboardState.rules);
@@ -195,6 +197,16 @@ export default function ConnectedDashboard() {
       cancelled = true;
     };
   }, [token, reloadKey]);
+
+  // Update local state when real-time data arrives
+  useEffect(() => {
+    if (realtimeNotifications.length > 0) {
+      setNotifications(realtimeNotifications);
+    }
+    if (realtimeSummary) {
+      setSummary(realtimeSummary);
+    }
+  }, [realtimeNotifications, realtimeSummary]);
 
   const visibleNotifications = useMemo(
     () => notifications.filter((item) => !dismissedIds.includes(item.id)),
@@ -376,6 +388,7 @@ export default function ConnectedDashboard() {
   const navItems = [
     { id: "action" as Tab, label: "Needs Action", icon: Flame, count: actionItems.length },
     { id: "waiting" as Tab, label: "Waiting on Others", icon: Clock, count: waitingItems.length },
+    { id: "activity" as Tab, label: "Live Activity", icon: Zap, count: activity ? activity.total_issues + activity.total_prs : 0 },
     { id: "repos" as Tab, label: "Repositories", icon: BookOpen, count: activeTrackedRepositories.length || repositoryCards.length },
     { id: "rules" as Tab, label: "Custom Rules", icon: Filter, count: rules.filter((rule) => rule.active).length },
     { id: "stale" as Tab, label: "Stale & Overdue", icon: RefreshCw, count: staleItems.length },
@@ -525,6 +538,12 @@ export default function ConnectedDashboard() {
           </AnimatePresence>
           </div>
           <div className="flex items-center gap-2 pl-3 border-l border-white/10">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`} title={isConnected ? 'Connected' : 'Disconnected'} />
+              <span className="text-xs text-white/40 hidden lg:block">
+                {isConnected ? 'Live' : 'Offline'}
+              </span>
+            </div>
             <div className="w-7 h-7 bg-white/10 text-white text-xs font-bold rounded-full flex items-center justify-center">
               {user?.avatar}
             </div>
@@ -663,6 +682,102 @@ export default function ConnectedDashboard() {
                       })
                     )}
                   </div>
+                </motion.div>
+              )}
+
+              {activeTab === "activity" && (
+                <motion.div key="activity" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="p-6 max-w-5xl">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h1 className="text-xl font-display font-bold text-white">Live GitHub Activity</h1>
+                      <p className="text-sm text-white/30 mt-0.5">Real-time issues and pull requests from your repositories.</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`} />
+                        <span className="text-xs text-white/40">
+                          {isConnected ? 'Live' : 'Disconnected'} {lastUpdate && `• Updated ${formatRelativeAge(lastUpdate.toISOString())}`}
+                        </span>
+                      </div>
+                    </div>
+                    {realtimeError && (
+                      <div className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
+                        {realtimeError}
+                      </div>
+                    )}
+                  </div>
+
+                  {activity ? (
+                    <div className="space-y-6">
+                      {/* Issues Section */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <AlertTriangle size={16} className="text-orange-400" />
+                          <h2 className="text-lg font-semibold text-white">Issues ({activity.total_issues})</h2>
+                        </div>
+                        <div className="space-y-2">
+                          {activity.issues.slice(0, 10).map((issue: any) => (
+                            <div key={issue.id} className="flex items-start gap-4 p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-all">
+                              <div className="mt-1 w-2 h-2 rounded-full bg-orange-400 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <span className="text-xs font-mono text-white/30">{issue.repository.full_name}</span>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${issue.state === 'open' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                                    {issue.state}
+                                  </span>
+                                </div>
+                                <h3 className="text-white/90 text-sm font-medium leading-snug mb-2">{issue.title}</h3>
+                                <div className="flex items-center gap-3 text-xs text-white/25">
+                                  <span>#{issue.number}</span>
+                                  <span>by {issue.user.login}</span>
+                                  <span>{issue.comments} comments</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          {activity.issues.length === 0 && (
+                            <div className="text-center py-8 text-white/30">No issues found</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Pull Requests Section */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <GitPullRequest size={16} className="text-blue-400" />
+                          <h2 className="text-lg font-semibold text-white">Pull Requests ({activity.total_prs})</h2>
+                        </div>
+                        <div className="space-y-2">
+                          {activity.pull_requests.slice(0, 10).map((pr: any) => (
+                            <div key={pr.id} className="flex items-start gap-4 p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-all">
+                              <div className="mt-1 w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <span className="text-xs font-mono text-white/30">{pr.repository.full_name}</span>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${pr.state === 'open' ? 'bg-green-500/10 text-green-400' : 'bg-purple-500/10 text-purple-400'}`}>
+                                    {pr.state}
+                                  </span>
+                                </div>
+                                <h3 className="text-white/90 text-sm font-medium leading-snug mb-2">{pr.title}</h3>
+                                <div className="flex items-center gap-3 text-xs text-white/25">
+                                  <span>#{pr.number}</span>
+                                  <span>by {pr.user.login}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          {activity.pull_requests.length === 0 && (
+                            <div className="text-center py-8 text-white/30">No pull requests found</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center py-20">
+                      <div className="text-center">
+                        <RefreshCw size={24} className="text-white/20 mx-auto mb-4 animate-spin" />
+                        <p className="text-white/30">Loading live activity...</p>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
 
