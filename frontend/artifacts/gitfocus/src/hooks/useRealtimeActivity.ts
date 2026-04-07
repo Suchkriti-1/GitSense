@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { connectRealtimeWebSocket, fetchGitHubActivity, GitHubActivity, RealtimeUpdate, NotificationItem, NotificationSummary } from "@/lib/api";
+import {
+  connectRealtimeWebSocket,
+  fetchGitHubActivity,
+  fetchNotifications,
+  GitHubActivity,
+  RealtimeUpdate,
+  NotificationItem,
+  NotificationSummary,
+} from "@/lib/api";
 
 export function useRealtimeDashboard(token: string | null) {
   const [activity, setActivity] = useState<GitHubActivity | null>(null);
@@ -106,8 +114,16 @@ export function useRealtimeDashboard(token: string | null) {
     if (!token) return;
 
     try {
-      const data = await fetchGitHubActivity(token);
-      setActivity(data);
+      const [activityData, notificationsData] = await Promise.all([
+        fetchGitHubActivity(token),
+        fetchNotifications(token),
+      ]);
+
+      setActivity(activityData);
+      setNotifications(notificationsData.notifications);
+      setSummary(notificationsData.summary);
+      prevNotificationIdsRef.current = new Set(notificationsData.notifications.map((item) => item.id));
+      initializedRef.current = true;
       setLastUpdate(new Date());
       setError(null);
     } catch (err) {
@@ -118,6 +134,7 @@ export function useRealtimeDashboard(token: string | null) {
 
   useEffect(() => {
     if (token) {
+      void fetchInitialData();
       // Establish WebSocket connection for real-time updates
       connect();
     } else {
@@ -127,7 +144,7 @@ export function useRealtimeDashboard(token: string | null) {
     return () => {
       disconnect();
     };
-  }, [token, connect, disconnect]);
+  }, [token, connect, disconnect, fetchInitialData]);
 
   return {
     activity,
