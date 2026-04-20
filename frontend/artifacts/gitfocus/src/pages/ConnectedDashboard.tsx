@@ -455,7 +455,7 @@ export default function ConnectedDashboard() {
     <div className="min-h-screen bg-black text-white flex flex-col">
       <header className="h-14 border-b border-white/[0.06] bg-black/90 backdrop-blur-md flex items-center px-4 md:px-6 gap-4 sticky top-0 z-40">
         <a href="/" className="mr-4 shrink-0 hover:opacity-75 transition-opacity">
-          <span className="font-display font-bold text-lg tracking-tight">Revv</span>
+          <span className="font-display font-bold text-lg tracking-tight">GitSense</span>
         </a>
 
         <div className="flex-1 max-w-lg">
@@ -1080,7 +1080,7 @@ export default function ConnectedDashboard() {
                   <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5">
                     <h3 className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-4 font-mono">Session</h3>
                     <button onClick={handleSignOut} className="flex items-center gap-2 text-sm text-red-400 border border-red-500/20 bg-red-500/[0.04] px-4 py-2.5 rounded-xl hover:bg-red-500/10 transition-all">
-                      <LogOut size={14} /> Sign out of Revv
+                      <LogOut size={14} /> Sign out of GitSense
                     </button>
                   </div>
                 </motion.div>
