@@ -47,7 +47,7 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
                   <X size={20} />
                 </button>
                 <div className="mb-6">
-                  <span className="font-display font-bold text-2xl text-white">Revv</span>
+                  <span className="font-display font-bold text-2xl text-white">GitSense</span>
                 </div>
                 <h2 className="text-2xl font-display font-bold text-white mb-2">Welcome back</h2>
                 <p className="text-white/50 text-sm">Sign in to access your dashboard and stay focused.</p>
