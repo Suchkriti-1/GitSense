@@ -1,6 +1,6 @@
-# Revv — Cut Through the GitHub Noise
+# GitSense — Cut Through the GitHub Noise
 
-Revv is a developer-focused notification intelligence platform. Instead of drowning in bot updates and irrelevant pings, Revv filters your GitHub notifications so you only see the pull requests, issues, and mentions that actually need your attention — right now.
+GitSense is a developer-focused notification intelligence platform. Instead of drowning in bot updates and irrelevant pings, GitSense filters your GitHub notifications so you only see the pull requests, issues, and mentions that actually need your attention — right now.
 
 ## Live Demo
 
@@ -25,7 +25,7 @@ Revv is a developer-focused notification intelligence platform. Instead of drown
 ## Project Structure
 
 ```
-Revv/
+GitSense/
 ├── frontend/                      # React (Vite) frontend
 │   ├── public/                    # Static assets
 │   ├── src/
@@ -61,8 +61,8 @@ Revv/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-username/Revv.git
-cd Revv
+git clone https://github.com/your-username/GitSense.git
+cd GitSense
 ```
 
 ### 2. Setup frontend
