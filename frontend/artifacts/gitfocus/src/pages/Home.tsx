@@ -61,7 +61,7 @@ export default function Home() {
               initial="hidden" animate="visible" variants={fadeUp}
               className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mb-12 leading-relaxed"
             >
-              Revv filters your notifications intelligently — so you only see the pull requests
+              GitSense filters your notifications intelligently — so you only see the pull requests
               and issues that truly matter.
             </motion.p>
 
@@ -215,7 +215,7 @@ export default function Home() {
             >
               <div className="hidden md:flex w-64 border-r border-white/5 bg-[#050505] flex-col p-4">
                 <div className="flex items-center gap-2 mb-8 px-2">
-                  <span className="font-display font-bold">Revv</span>
+                  <span className="font-display font-bold">GitSense</span>
                 </div>
                 <div className="space-y-1">
                   <div className="px-3 py-2 bg-white/10 rounded-lg text-white font-medium flex items-center gap-2 text-sm">
@@ -288,11 +288,11 @@ export default function Home() {
               </h2>
             </div>
             <Accordion items={[
-              { id: "faq-1", question: "Does Revv work with private repositories?", answer: "Yes. Revv requires authorized access to your GitHub account to read private repository data. However, we only store metadata (issue IDs, titles, status) necessary to run the dashboard. We never clone or store your actual source code." },
+              { id: "faq-1", question: "Does GitSense work with private repositories?", answer: "Yes. GitSense requires authorized access to your GitHub account to read private repository data. However, we only store metadata (issue IDs, titles, status) necessary to run the dashboard. We never clone or store your actual source code." },
               { id: "faq-2", question: "What GitHub permissions does it need?", answer: "We request the minimal 'repo' scope for reading issue and PR metadata, and 'read:org' if you want to track organization repositories. We do not require write access to your repositories." },
               { id: "faq-3", question: "Can I filter notifications by label?", answer: "Absolutely. With custom rules, you can prioritize notifications based on specific labels like 'urgent', 'bug', or 'needs-review', while muting others like 'wontfix' or 'duplicate'." },
-              { id: "faq-4", question: "Is there a mobile app?", answer: "Currently, Revv is a responsive web application that works great on mobile browsers. A dedicated native iOS and Android app with push notifications is on our roadmap." },
-              { id: "faq-5", question: "How is this different from GitHub's built-in notifications?", answer: "GitHub’s default inbox works like email — everything flows chronologically. Revv keeps your workflow clean, so you stay focused without being pulled into every discussion." },
+              { id: "faq-4", question: "Is there a mobile app?", answer: "Currently, GitSense is a responsive web application that works great on mobile browsers. A dedicated native iOS and Android app with push notifications is on our roadmap." },
+              { id: "faq-5", question: "How is this different from GitHub's built-in notifications?", answer: "GitHub’s default inbox works like email — everything flows chronologically. GitSense keeps your workflow clean, so you stay focused without being pulled into every discussion." },
             ]} />
           </div>
         </section>
@@ -327,7 +327,7 @@ export default function Home() {
             >
               Get Started 
             </button>
-            <p className="mt-6 text-sm text-white/40 font-mono">Revv up your GitHub workflow.</p>
+
           </div>
         </section>
 
