@@ -43,7 +43,7 @@ export function Header({ onGetStarted }: HeaderProps) {
         <div className="flex items-center justify-between">
           <a href="/" className="z-50 group">
             <span className="font-display font-bold text-2xl tracking-tight text-white group-hover:opacity-80 transition-opacity">
-              Revv
+              GitSense
             </span>
           </a>
 
